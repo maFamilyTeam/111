@@ -148,7 +148,7 @@ class Library():
         return result
     def delete_book(self,id):
         """删除图书"""
-        if not self.current_user or self.current_user!='管理员':
+        if not self.current_user or self.current_user.user_type!='管理员':
             print("需要管理员权限！")
             return False
         if id in self.books:
@@ -193,6 +193,8 @@ def main():
     print("欢迎进入图书管理系统！")
     print("==============================")
     library=Library()
+    if "admin" not in library.users:
+        library.users['admin']=User('admin','系统管理员','123456','管理员')
     while True:
         if library.current_user:
             print(f"当前用户: {library.current_user.username} ({library.current_user.user_type})")
@@ -211,7 +213,7 @@ def main():
             print("3. 用户登录")
             print("4. 用户注册")
             print("0. 退出系统")
-        choice=input("\n请输入序号")
+        choice=input("\n请输入序号:")
         if choice=="0":
             print("感谢使用！")
             break
@@ -247,14 +249,14 @@ def main():
                 else:
                     print("未找到相关图书！")
             elif choice=="3":
-                user_id=input("请输入用户ID").strip()
-                pwd=input("用户密码").strip()
+                user_id=input("请输入用户ID：").strip()
+                pwd=input("用户密码：").strip()
                 library.login(pwd,user_id)
             elif choice == "4":
                 user_id = input("请输入新用户ID: ").strip()
                 name = input("请输入姓名: ").strip()
                 user_type = input("请输入用户类型 (普通用户/管理员): ").strip()
-                pwd=input("请输入用户密码").strip()
+                pwd=input("请输入用户密码：").strip()
                 if user_type not in ["普通用户", "管理员"]:
                     user_type = "普通用户"
                 library.register(user_id,name,pwd,user_type)
@@ -290,10 +292,10 @@ def main():
                 results = library.search_book(keyword, search_by)
                 if results:
                     print("\n搜索结果:")
-                    print(f"{'图书ID':<10}{'书名':<25}{'作者':<15}{'可借数量':<8}")
+                    print(f"{'图书ID':<10}{'书名':<25}{'作者':<15}{'价格':<10}{'状态':<10}")
                     print("-" * 60)
                     for book in results:
-                        print(f"{book.id:<10}{book.title:<25}{book.author:<15}")
+                        print(f"{book.id:<10}{book.title:<25}{book.author:<15}{book.price:<10}{book.status:<10}")
                 else:
                     print("未找到相关图书！")
             elif choice == "3":

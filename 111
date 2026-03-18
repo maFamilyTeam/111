@@ -281,7 +281,7 @@ class Library():
         answer=input("问题答案：").strip()
         choice=input("用户类型(1.管理员/2.普通用户)：").strip()
         for new_name in self.users.values():
-            if name in new_name.username:
+            if name in new_name.name:
                 print("用户已存在！")
                 return False
         if not name:

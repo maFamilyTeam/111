@@ -1,62 +1,66 @@
 import os
 import json
 class Book():
-    """图书类"""
-    def __init__(self,id,title,author,price,isbn,status):
-        self.id=id
+    def __init__(self,book_id,title,price,author,isbn,status='在馆'):
+        self.book_id = book_id
         self.title = title
-        self.author = author
         self.price = price
+        self.author = author
         self.isbn = isbn
-        self.status=status
+        self.status = status
     def to_dict(self):
         return {
-            'id':self.id,
+            'book_id':self.book_id,
             'title':self.title,
-            'author':self.author,
             'price':self.price,
+            'author':self.author,
             'isbn':self.isbn,
             'status':self.status
         }
     @staticmethod
-    def from_dict(data):
+    def to_json(data):
         return Book(
-            data['id'],
+            data['book_id'],
             data['title'],
-            data['author'],
             data['price'],
+            data['author'],
             data['isbn'],
             data['status']
         )
 class User():
-    """用户类"""
-    def __init__(self,user_id,username,password,user_type):
-        self.user_id=user_id
-        self.username=username
-        self.password=password
-        self.user_type=user_type
+    def __init__(self,user_id,name,password,question,answer,user_type='普通用户'):
+        self.user_id = user_id
+        self.name = name
+        self.password = password
+        self.question = question
+        self.answer = answer
+        self.user_type = user_type
     def to_dict(self):
         return {
             'user_id':self.user_id,
-            'username':self.username,
+            'name':self.name,
             'password':self.password,
+            'question':self.question,
+            'answer':self.answer,
             'user_type':self.user_type,
         }
     @staticmethod
-    def from_dict(data):
+    def to_json(data):
         return User(
             data['user_id'],
-            data['username'],
+            data['name'],
             data['password'],
-            data['user_type'],
+            data['question'],
+            data['answer'],
+            data['user_type']
         )
 class Library():
     def __init__(self,books_file='books.json',users_file='users.json'):
-        self.books_file=books_file
-        self.users_file=users_file
-        self.books={} #{book.id:Book}
-        self.users={} #{user.id:User}
-        self.current_user = None
+        self.books_file = books_file
+        self.users_file = users_file
+        self.books={} #{book_id:Book}
+        self.users={} #{user_id:User}
+        self.current_user=None
         self.load_data()
     def load_data(self):
         if os.path.exists(self.books_file):
@@ -64,8 +68,8 @@ class Library():
                 with open(self.books_file,'r',encoding='utf-8')as f:
                     books_data=json.load(f)
                     for book_data in books_data.values():
-                        book=Book.from_dict(book_data)
-                        self.books[book.id]=book
+                        book=Book.to_json(book_data)
+                        self.books[book.book_id]=book
             except:
                 self.books={}
         if os.path.exists(self.users_file):
@@ -73,254 +77,357 @@ class Library():
                 with open(self.users_file,'r',encoding='utf-8')as f:
                     users_data=json.load(f)
                     for user_data in users_data.values():
-                        user=User.from_dict(user_data)
+                        user=User.to_json(user_data)
                         self.users[user.user_id]=user
             except:
                 self.users={}
-
     def save_data(self):
         books_dict={}
         for book_id,book in self.books.items():
             book_dict=book.to_dict()
             books_dict[book_id]=book_dict
-        with open(self.books_file, 'w', encoding='utf-8') as f:
-            json.dump(books_dict, f, ensure_ascii=False, indent=4)
+        with open(self.books_file,'w',encoding='utf-8')as f:
+            json.dump(books_dict,f,ensure_ascii=False,indent=4)
         users_dict={}
         for user_id,user in self.users.items():
             user_dict=user.to_dict()
             users_dict[user_id]=user_dict
         with open(self.users_file,'w',encoding='utf-8')as f:
             json.dump(users_dict,f,ensure_ascii=False,indent=4)
-    def register(self,user_id,username,password,user_type='普通用户'):
-        if user_id in self.users:
-            print(f'该用户已存在')
-            return False
-        else:
-            self.users[user_id]=User(user_id,username,password,user_type)
-            self.save_data()
-            return True
-    def login(self,password,user_id):
-        if user_id in self.users:
-            self.current_user = self.users[user_id]
-            if self.users[user_id].password==password:
-                print("欢迎回来")
-                return True
-            else:
-                print("密码错误")
-                return False
-        else:
-            print("该用户不存在")
-            return False
-    def logout(self):
-        self.current_user =None
-        print("再见")
-        return True
-    def add_book(self,title,author,price,isbn,status='在馆'):
+    def add_book(self):
         if not self.current_user or self.current_user.user_type!='管理员':
             print("需要管理员权限！")
             return False
-        id=len(self.books)+1
-        self.books[id]=Book(id,title,author,price,isbn,status)
-        self.save_data()
-        print("添加图书成功!")
-        return True
-    def display_books(self):
-        if not self.books:
-            print("暂无图书信息")
-            return False
-        else:
-            print(f"{'图书id':<10}{'书名':<10}{'作者':<10}{'价格':<5}{'isbn':<5}{'状态':<5}")
-            for book in self.books.values():
-                print(f"{book.id:<10}{book.title:<10}{book.author:<10}{book.price:<5}{book.isbn:<5}{book.status:<5}")
-            return True
-    def search_book(self,keyword,search_by="title"):
-        result=[]
-        keyword=keyword.lower()
+        title=input("请输入图书名称：")
+        price=input("图书价格：")
+        author=input("图书作者：")
+        isbn=input("图书ISBN：")
         for book in self.books.values():
-            if search_by=="title" and keyword in book.title.lower():
-                result.append(book)
-            elif search_by=="author" and keyword in book.author.lower():
-                result.append(book)
-            elif search_by=="isbn" and keyword in book.isbn.lower():
-                result.append(book)
-            elif search_by=="id" and keyword in book.id.lower():
-                result.append(book)
-        return result
-    def delete_book(self,id):
-        """删除图书"""
+            if book.isbn==isbn:
+                print("ISBN已存在，添加失败！")
+                return False
+        if self.books:
+            max_id=max(int(book_id) for book_id in self.books.keys())
+            new_id=str(max_id+1)
+        else:
+            new_id="1"
+        new_book=Book(new_id,title,price,author,isbn,status='在馆')
+        self.books[new_id]=new_book
+        self.save_data()
+        print("添加图书成功！")
+        return True
+    def delete_book(self):
         if not self.current_user or self.current_user.user_type!='管理员':
             print("需要管理员权限！")
             return False
-        if id in self.books:
+        id=input("请输入图书ID：")
+        if not self.books:
+            print("当前库中没有图书可删除！")
+            return False
+        if id not in self.books:
+            print("图书不存在！")
+            return False
+        confirm=input(f"确定要删除ID为{id}的图书?(y/n):")
+        if confirm.lower() == 'y':
             del self.books[id]
             self.save_data()
-            print("删除图书成功！")
+            print("删除成功")
+            return True
+    def edit_book(self):
+        if not self.current_user or self.current_user.user_type != '管理员':
+            print("需要管理员权限！")
+            return False
+        if not self.books:
+            print("当前库没有图书可修改！")
+            return False
+        id=input("请输入要修改的图书ID：")
+        if id not in self.books:
+            print("未找到该图书！")
+            return False
+        book=self.books[id]
+        new_title=input("请输入新书名：")
+        new_price=input("新价格：")
+        new_author=input("新作者：")
+        new_isbn=input("新ISBN：")
+        new_status=input("新状态：")
+        if new_title:
+            book.title=new_title
+        if new_price:
+            book.price=new_price
+        if new_author:
+            book.author=new_author
+        if new_isbn:
+            book.isbn=new_isbn
+        if new_status:
+            book.status=new_status
+        self.save_data()
+        print("图书修改成功！")
+        return True
+    def search_book(self):
+        if not self.books:
+            print("当前库中没有图书信息！")
+            return False
+        print("=====查找图书=====")
+        print("1.按图书ID查找")
+        print("2.按书名查找")
+        print("3.按作者查找")
+        print("4.按ISBN查找")
+        choice=input("请选择查找方式：")
+        if choice=='1':
+            id=input("请输入图书ID")
+            found = False
+            if id in self.books:
+                book=self.books[id]
+                print("找到图书")
+                print(f"ID:{book.book_id}")
+                print(f"书名:{book.title}")
+                print(f"作者:{book.author}")
+                print(f"价格:{book.price}")
+                print(f"ISBN:{book.isbn}")
+                print(f"状态:{book.status}")
+                found=True
+            if not found:
+                print("未找到该图书！")
+        elif choice=='2':
+            found=False
+            title=input("请输入书名：")
+            for book in self.books.values():
+                if title in book.title:
+                    print("找到图书")
+                    print(f"ID:{book.book_id}")
+                    print(f"书名:{book.title}")
+                    print(f"作者:{book.author}")
+                    print(f"价格:{book.price}")
+                    print(f"ISBN:{book.isbn}")
+                    print(f"状态:{book.status}")
+                    found=True
+            if not found:
+                print("未找到该图书！")
+        elif choice=='3':
+            found = False
+            author=input("请输入作者：")
+            for book in self.books.values():
+                if author in book.author:
+                    print("找到图书")
+                    print(f"ID:{book.book_id}")
+                    print(f"书名:{book.title}")
+                    print(f"作者:{book.author}")
+                    print(f"价格:{book.price}")
+                    print(f"ISBN:{book.isbn}")
+                    print(f"状态:{book.status}")
+                    found=True
+            if not found:
+                print("未找到该图书！")
+        elif choice=='4':
+            found = False
+            isbn=input("请输入ISBN：")
+            for book in self.books.values():
+                if isbn in book.isbn:
+                    print("找到图书")
+                    print(f"ID:{book.book_id}")
+                    print(f"书名:{book.title}")
+                    print(f"作者:{book.author}")
+                    print(f"价格:{book.price}")
+                    print(f"ISBN:{book.isbn}")
+                    print(f"状态:{book.status}")
+                    found=True
+            if not found:
+                print("未找到该图书！")
+        else:
+            print("输入错误！")
+    def borrow(self):
+        if not self.current_user:
+            print("请先登录！")
+            return False
+        if not self.books:
+            print("目前库里没有图书可借！")
+            return False
+        id=input("请输入要借阅的图书ID：")
+        if id not in self.books:
+            print("未找到该图书！")
+            return False
+        if self.books[id].status=='已借出':
+            print("图书已被借出，无法再次借阅！")
+            return False
+        self.books[id].status='已借出'
+        self.save_data()
+        print("借阅成功！")
+        return True
+    def return_book(self):
+        if not self.current_user:
+            print("请先登录！")
+            return False
+        id=input("请输入要归还的图书ID：")
+        if id not in self.books:
+            print("未找到该图书！")
+            return False
+        if self.books[id].status=='在馆':
+            print("图书在馆，无需归还！")
+            return False
+        self.books[id].status='在馆'
+        self.save_data()
+        print("归还成功！")
+        return True
+    def register(self):
+        if not self.users:
+            new_id="1"
+        else:
+            max_id= max(int(user_id) for user_id in self.users)
+            new_id=str(max_id+1)
+        print(f"系统已自动分配用户ID:{new_id}")
+        name=input("用户名：").strip()
+        pwd=input("用户密码：").strip()
+        question=input("安全问题：").strip()
+        answer=input("问题答案：").strip()
+        choice=input("用户类型(1.管理员/2.普通用户)：").strip()
+        for new_name in self.users.values():
+            if name in new_name:
+                print("用户已存在！")
+                return False
+        if not name:
+            print("用户名不能为空！")
+            return False
+        if not pwd:
+            print("密码不能为空！")
+            return False
+        if not question:
+            print("安全问题不能为空！")
+            return False
+        if not answer:
+            print("问题答案不能为空！")
+            return False
+        if choice=='1':
+            user_type='管理员'
+        else:
+            user_type='普通用户'
+        user=User(new_id,name,pwd,question,answer,user_type)
+        self.users[new_id]=user
+        self.save_data()
+        print("注册成功！")
+        return True
+    def login(self):
+        name=input("请输入用户名：")
+        users=self.users
+        found_user=None
+        for user in users.values():
+            if name in user.name:
+                found_user=user
+                break
+        if found_user is None:
+            print("用户不存在！")
+            return False
+        pwd=input("请输入用户密码：")
+        if pwd !=found_user.password:
+            print("密码错误！")
+            return False
+        self.current_user=found_user
+        print("登录成功！")
+        return True
+    def logout(self):
+        if self.current_user:
+            self.current_user=None
+            print("谢谢使用！")
             return True
         else:
-            print("该图书不存在")
+            print("请先登录！")
             return False
-    def borrow_book(self,id):
-        if id in self.books.keys():
-            if self.books[id].status=='在馆':
-                book=self.books[id]
-                book.status='已借出'
-                print(f"图书《{book.title}》借阅成功，请及时归还")
-                return True
-            else:
-                print("图书已被借阅")
-                return False
+    def find_pwd(self):
+        id=input("请输入用户ID:")
+        if id not in self.users:
+            print("用户不存在！")
+            return False
+        user=self.users[id]
+        print(f"安全问题:{user.question}")
+        answer=input("请输入答案：")
+        if answer!=user.answer:
+            print("答案错误，无法找回密码！")
+            return False
+        print(f"验证成功，密码是：{user.password}")
+        return True
+    def show_all_books(self):
+        if not self.books:
+            print("目前库中没有图书！")
+            return False
+        print("1.按ID升序")
+        print("2.按书名升序(A-Z)")
+        print("3.按价格升序")
+        print("4.按价格降序")
+        print("5.按状态排序(在馆优先)")
+        choice=input("请选择排序方式：")
+        books_list=list(self.books.values())
+        if choice=='1':
+            sorted_book=sorted(books_list,key=lambda x:int(x.book_id))
+        elif choice=='2':
+            sorted_book=sorted(books_list,key=lambda x:x.title.lower())
+        elif choice=='3':
+            sorted_book=sorted(books_list,key=lambda x:float(x.price))
+        elif choice=='4':
+            sorted_book=sorted(books_list,key=lambda x:float(x.price),reverse=True)
+        elif choice=='5':
+            sorted_book=sorted(books_list,key=lambda x:(0 if x.status=='在馆' else 1,int(x.book_id)))
         else:
-            print("未找到该图书")
-            return False
-    def return_book(self,id):
-        if id in self.books.keys():
-            book=self.books[id]
-            if book.status=='已借出':
-                print("还书成功")
-                book.status='在馆'
-                return True
-            else:
-                print("图书在馆")
-                return False
-        else:
-            print("未找到该图书")
-            return False
-
-
-
+            print("输入无效，默认按ID升序排序！")
+            sorted_book=sorted(books_list,key=lambda x:int(x.book_id))
+        print(f"{'ID':<5}{'书名':<30}{'作者':<15}{'价格':<10}{'ISBN':<18}{'状态':<8}")
+        for book in sorted_book:
+            print(f"{book.book_id:<5}{book.title:<30}{book.author:<15}{book.price:<10}{book.isbn:<18}{book.status:<8}")
 def main():
-    print("==============================")
-    print("欢迎进入图书管理系统！")
-    print("==============================")
     library=Library()
-    if "admin" not in library.users:
-        library.users['admin']=User('admin','系统管理员','123456','管理员')
+    print("==========================")
+    print("欢迎进入图书管理系统")
+    print("==========================")
+    if 'admin' not in library.users:
+        library.users['admin']=User('admin','系统管理员','123456','生日','0101','管理员')
+        library.save_data()
     while True:
-        if library.current_user:
-            print(f"当前用户: {library.current_user.username} ({library.current_user.user_type})")
-            print("1. 查看所有图书")
-            print("2. 搜索图书")
-            print("3. 借阅图书")
-            print("4. 归还图书")
-            print("5. 登出")
+        print("1.用户注册")
+        print("2.用户登录")
+        print("3.找回密码")
+        print("0.退出系统")
+        choice=input("请选择操作：")
+        if choice=='1':
+            library.register()
+        elif choice=='2':
+            library.login()
             if library.current_user.user_type=='管理员':
-                print("6. 添加图书")
-                print("7. 删除图书")
-            print("0. 退出系统")
-        else:
-            print("1. 查看所有图书")
-            print("2. 搜索图书")
-            print("3. 用户登录")
-            print("4. 用户注册")
-            print("0. 退出系统")
-        choice=input("\n请输入序号:")
-        if choice=="0":
-            print("感谢使用！")
+                while True:
+                    print("==========================================")
+                    print("管理员系统")
+                    print("==========================================")
+                    print("1.查询图书")
+                    print("2.借阅图书")
+                    print("3.归还图书")
+                    print("4.添加图书")
+                    print("5.删除图书")
+                    print("6.修改图书")
+                    print("7.显示所有图书")
+                    print("0.退出登录")
+                    choice=input("请选择操作：")
+                    if choice=='1':
+                        library.search_book()
+                    elif choice=='2':
+                        library.borrow()
+                    elif choice=='3':
+                        library.return_book()
+                    elif choice=='4':
+                        library.add_book()
+                    elif choice=='5':
+                        library.delete_book()
+                    elif choice=='6':
+                        library.edit_book()
+                    elif choice=='7':
+                        library.show_all_books()
+                    elif choice=='8':
+                        library.logout()
+                        break
+                    else:
+                        print("输入错误")
+        elif choice=='3':
+            library.find_pwd()
+        elif choice=='0':
+            print("系统已退出！")
             break
-        elif not library.current_user:
-            if choice=="1":
-                library.display_books()
-            elif choice=="2":
-                print("\n搜索选项:")
-                print("1. 按书名搜索")
-                print("2. 按作者搜索")
-                print("3. 按ISBN搜索")
-                search_choice = input("请选择搜索方式: ").strip()
-                if search_choice == "1":
-                    keyword = input("请输入书名关键词: ").strip()
-                    search_by = "title"
-                elif search_choice == "2":
-                    keyword = input("请输入作者关键词: ").strip()
-                    search_by = "author"
-                elif search_choice == "3":
-                    keyword = input("请输入ISBN: ").strip()
-                    search_by = "isbn"
-                else:
-                    print("无效选择！")
-                    continue
-
-                results = library.search_book(keyword, search_by)
-                if results:
-                    print("\n搜索结果:")
-                    print(f"{'图书ID':<10}{'书名':<25}{'作者':<15}")
-                    print("-" * 60)
-                    for book in results:
-                        print(f"{book.id:<10}{book.title:<25}{book.author:<15}")
-                else:
-                    print("未找到相关图书！")
-            elif choice=="3":
-                user_id=input("请输入用户ID：").strip()
-                pwd=input("用户密码：").strip()
-                library.login(pwd,user_id)
-            elif choice == "4":
-                user_id = input("请输入新用户ID: ").strip()
-                name = input("请输入姓名: ").strip()
-                user_type = input("请输入用户类型 (普通用户/管理员): ").strip()
-                pwd=input("请输入用户密码：").strip()
-                if user_type not in ["普通用户", "管理员"]:
-                    user_type = "普通用户"
-                library.register(user_id,name,pwd,user_type)
-            else:
-                print("无效选择！")
         else:
-            # 已登录状态
-            if choice == "1":
-                library.display_books()
-            elif choice == "2":
-                print("\n搜索选项:")
-                print("1. 按书名搜索")
-                print("2. 按作者搜索")
-                print("3. 按ISBN搜索")
-                print("4. 按图书ID搜索")
-                search_choice = input("请选择搜索方式: ").strip()
-                if search_choice == "1":
-                    keyword = input("请输入书名关键词: ").strip()
-                    search_by = "title"
-                elif search_choice == "2":
-                    keyword = input("请输入作者关键词: ").strip()
-                    search_by = "author"
-                elif search_choice == "3":
-                    keyword = input("请输入ISBN: ").strip()
-                    search_by = "isbn"
-                elif search_choice == "4":
-                    keyword = input("请输入图书ID: ").strip()
-                    search_by = "id"
-                else:
-                    print("无效选择！")
-                    continue
-
-                results = library.search_book(keyword, search_by)
-                if results:
-                    print("\n搜索结果:")
-                    print(f"{'图书ID':<10}{'书名':<25}{'作者':<15}{'价格':<10}{'状态':<10}")
-                    print("-" * 60)
-                    for book in results:
-                        print(f"{book.id:<10}{book.title:<25}{book.author:<15}{book.price:<10}{book.status:<10}")
-                else:
-                    print("未找到相关图书！")
-            elif choice == "3":
-                library.display_books()
-                book_id = input("请输入要借阅的图书ID: ").strip()
-                library.borrow_book(book_id)
-            elif choice == "4":
-                book_id = input("请输入要归还的图书ID: ").strip()
-                library.return_book(book_id)
-            elif choice == "6" and library.current_user.user_type == "管理员":
-                title = input("请输入书名: ").strip()
-                author = input("作者: ").strip()
-                isbn = input("ISBN: ").strip()
-                price=input("价格：").strip()
-                library.add_book(title, author,price, isbn)
-            elif choice == "7" and library.current_user.user_type == "管理员":
-                library.display_books()
-                book_id = input("请输入要删除的图书ID: ").strip()
-                confirm = input(f"确认删除图书 {book_id}? (y/n): ").strip().lower()
-                if confirm == 'y':
-                    library.delete_book(book_id)
-            elif choice == "5":
-                library.logout()
-            else:
-                print("无效选择！")
-
-if __name__ == "__main__":
+            print("输入无效！")
+if __name__ == '__main__':
     main()

@@ -1,5 +1,11 @@
 import os
 import json
+os.environ['TERM'] = 'xterm'
+import platform
+import os
+import json
+def clear():
+    print("\n" * 80)
 class Book():
     def __init__(self,book_id,title,price,author,isbn,status='在馆'):
         self.book_id = book_id
@@ -280,10 +286,6 @@ class Library():
         question=input("安全问题：").strip()
         answer=input("问题答案：").strip()
         choice=input("用户类型(1.管理员/2.普通用户)：").strip()
-        for new_name in self.users.values():
-            if name in new_name.name:
-                print("用户已存在！")
-                return False
         if not name:
             print("用户名不能为空！")
             return False
@@ -296,6 +298,10 @@ class Library():
         if not answer:
             print("问题答案不能为空！")
             return False
+        for new_name in self.users.values():
+            if name in new_name.name:
+                print("用户已存在！")
+                return False
         if choice=='1':
             user_type='管理员'
         else:
@@ -306,23 +312,32 @@ class Library():
         print("注册成功！")
         return True
     def login(self):
+        max_try=3
         name=input("请输入用户名：")
         users=self.users
         found_user=None
         for user in users.values():
-            if name in user.name:
+            if name == user.name:
                 found_user=user
                 break
         if found_user is None:
             print("用户不存在！")
             return False
-        pwd=input("请输入用户密码：")
-        if pwd !=found_user.password:
-            print("密码错误！")
-            return False
-        self.current_user=found_user
-        print("登录成功！")
-        return True
+        for i in range(max_try):
+
+            pwd=input("请输入用户密码：")
+            left=max_try-i-1
+            if pwd ==found_user.password:
+                self.current_user=found_user
+                print("登录成功！")
+                return True
+            else:
+                if left>0:
+                    print(f"密码错误！还剩{left}次机会")
+                else:
+                    print("登录已锁定！")
+                    return False
+        return False
     def logout(self):
         if self.current_user:
             self.current_user=None
@@ -368,16 +383,20 @@ class Library():
         else:
             print("输入无效，默认按ID升序排序！")
             sorted_book=sorted(books_list,key=lambda x:int(x.book_id))
-        print(f"{'ID':<5}{'书名':<30}{'作者':<15}{'价格':<10}{'ISBN':<18}{'状态':<8}")
         for book in sorted_book:
-            print(f"{book.book_id:<5}{book.title:<30}{book.author:<15}{book.price:<10}{book.isbn:<18}{book.status:<8}")
+            print(f"ID:{book.book_id}")
+            print(f"书名:{book.title}")
+            print(f"作者:{book.author}")
+            print(f"价格:{book.price}")
+            print(f"ISBN:{book.isbn}")
+            print(f"状态:{book.status}")
 def main():
     library=Library()
     print("==========================")
     print("欢迎进入图书管理系统")
     print("==========================")
-    if 'admin' not in library.users:
-        library.users['admin']=User('admin','系统管理员','123456','生日','0101','管理员')
+    if '1' not in library.users:
+        library.users['1']=User('1','admin','123456','生日','0101','管理员')
         library.save_data()
     while True:
         print("1.用户注册")
@@ -388,9 +407,11 @@ def main():
         if choice=='1':
             library.register()
         elif choice=='2':
-            library.login()
+            if not library.login():
+                continue
             if library.current_user.user_type=='管理员':
                 while True:
+                    clear()
                     print("==========================================")
                     print("管理员系统")
                     print("==========================================")
@@ -423,27 +444,29 @@ def main():
                     else:
                         print("输入错误")
             else:
-                print("==========================================")
-                print("普通用户系统")
-                print("==========================================")
-                print("1.查询图书")
-                print("2.借阅图书")
-                print("3.归还图书")
-                print("4.显示所有图书")
-                print("0.退出登录")
-                choice = input("请选择操作：")
-                if choice == '1':
-                    library.search_book()
-                elif choice == '2':
-                    library.borrow()
-                elif choice == '3':
-                    library.return_book()
-                elif choice == '4':
-                    library.show_all_books()
-                elif choice == '0':
-                    library.logout()
-                else:
-                    print("输入无效！")
+                while True:
+                    clear()
+                    print("==========================================")
+                    print("普通用户系统")
+                    print("==========================================")
+                    print("1.查询图书")
+                    print("2.借阅图书")
+                    print("3.归还图书")
+                    print("4.显示所有图书")
+                    print("0.退出登录")
+                    choice = input("请选择操作：")
+                    if choice == '1':
+                        library.search_book()
+                    elif choice == '2':
+                        library.borrow()
+                    elif choice == '3':
+                        library.return_book()
+                    elif choice == '4':
+                        library.show_all_books()
+                    elif choice == '0':
+                        library.logout()
+                    else:
+                        print("输入无效！")
         elif choice=='3':
             library.find_pwd()
         elif choice=='0':

@@ -1,12 +1,23 @@
 import json
 import os
 import time
-
-from matplotlib.style import library
+import pwinput
 
 USER_TYPE_ADMIN=1
 USER_TYPE_NORMAL=2
+import platform
 
+import os
+
+def clear_screen():
+    """
+    兼容 PyCharm / 终端 / 所有系统的清屏函数
+    不会再报 TERM 环境变量错误
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+# 调用
+clear_screen()
 class BookNode:
     def __init__(self,b_id,title,price,category,author,ISBN,borrow_cnt,status):
         self.b_id = b_id
@@ -103,7 +114,7 @@ class Library:
                     continue
                 break
             while True:
-                pwd = input("请输入管理员密码: ").strip()
+                pwd = pwinput.pwinput(prompt="请输入管理员密码: ").strip()
                 if not pwd:
                     print("密码不能为空，请重新输入")
                     continue
@@ -186,7 +197,7 @@ class Library:
         if name in self.users:
             print("该用户名已存在！")
             return
-        pwd = input("设置密码: ").strip()
+        pwd = pwinput.pwinput(prompt="设置密码: ").strip()
         if not pwd:
             print("密码不能为空！")
             return
@@ -209,7 +220,7 @@ class Library:
         self.save_data()
         print("注册成功！")
     def change_password(self,name):
-        old_pwd = input("请输入旧密码: ").strip()
+        old_pwd = pwinput.pwinput(prompt="请输入旧密码: ").strip()
         if old_pwd!=self.users[name]["password"]:
             print("旧密码错误！")
             return
@@ -230,7 +241,7 @@ class Library:
         if answer != self.users[name]["answer"]:
             print("密保回答错误！")
             return
-        new_pwd = input("验证成功！请输入新密码: ").strip()
+        new_pwd = pwinput.pwinput(prompt="验证成功！请输入新密码: ").strip()
         if not new_pwd:
             print("新密码不能为空！")
             return
@@ -525,7 +536,7 @@ def main():
                         lib.users[u]['time']=time.time()
                         lib.save_data()
                         break
-                    p = input("密码: ").strip()
+                    p = pwinput.pwinput(prompt= "密码: ").strip()
                     if lib.users[u]['password'] == p:
                         current_user = u
                         ut = lib.users[u].get("user_type", USER_TYPE_NORMAL)
@@ -538,6 +549,7 @@ def main():
                         chance-=1
             else:
                 print("未找到该用户，请先注册")
+            clear_screen()
             if ut == USER_TYPE_ADMIN:
                 while True:
                     ut = lib.users.get(current_user, {}).get("user_type", USER_TYPE_NORMAL)
@@ -581,6 +593,7 @@ def main():
                         print("再见！")
                         current_user = None
                         break
+                    clear_screen()
             elif current_user:
                 while True:
                     ut = lib.users.get(current_user, {}).get("user_type", USER_TYPE_NORMAL)
@@ -617,10 +630,14 @@ def main():
                         print("再见！")
                         current_user = None
                         break
+                clear_screen()
+            clear_screen()
         elif choice == '2':
             lib.register()
+            clear_screen()
         elif choice == '3':
             lib.find_pwd()
+            clear_screen()
         elif choice == '0':
             return
 if __name__ == "__main__":

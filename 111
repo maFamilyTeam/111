@@ -1,22 +1,11 @@
 import json
-import os
 import time
 import pwinput
-
 USER_TYPE_ADMIN=1
 USER_TYPE_NORMAL=2
-import platform
-
 import os
-
 def clear_screen():
-    """
-    兼容 PyCharm / 终端 / 所有系统的清屏函数
-    不会再报 TERM 环境变量错误
-    """
     os.system('cls' if os.name == 'nt' else 'clear')
-
-# 调用
 clear_screen()
 class BookNode:
     def __init__(self,b_id,title,price,category,author,ISBN,borrow_cnt,status):
@@ -593,7 +582,6 @@ def main():
                         print("再见！")
                         current_user = None
                         break
-                    clear_screen()
             elif current_user:
                 while True:
                     ut = lib.users.get(current_user, {}).get("user_type", USER_TYPE_NORMAL)
@@ -630,14 +618,12 @@ def main():
                         print("再见！")
                         current_user = None
                         break
-                clear_screen()
             clear_screen()
         elif choice == '2':
             lib.register()
             clear_screen()
         elif choice == '3':
             lib.find_pwd()
-            clear_screen()
         elif choice == '0':
             return
 if __name__ == "__main__":
